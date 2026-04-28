@@ -80,7 +80,6 @@ pip install pyrealsense2 pygame pyserial scipy
 
 # RTDE 库（优傲机器人实时通信）
 pip install ur-rtde
-# 或者将仓库中自带的 RTDE_Python_Client_Library/ 目录添加到 PYTHONPATH
 ```
 
 ### 3. 安装仿真依赖（可选）
@@ -216,7 +215,7 @@ python -m octo_ur5.inference.client_robot_tcp
 |----|------|---------|
 | pybullet_ur5_robotiq | PyBullet UR5 Robotiq 仿真环境 | 添加到 PYTHONPATH |
 | robopal | UR5e 仿真（实验性，可选） | `pip install robopal` |
-| ur-rtde | UR 系列机器人 RTDE 实时通信 | `pip install ur-rtde`（或使用自带的 `RTDE_Python_Client_Library/`） |
+| ur-rtde | UR 系列机器人 RTDE 实时通信 | `pip install ur-rtde` |
 
 ---
 

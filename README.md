@@ -123,7 +123,6 @@ pip install pyrealsense2 pygame pyserial scipy
 
 # RTDE library (Universal Robots real-time communication)
 pip install ur-rtde
-# Alternatively, the included RTDE_Python_Client_Library/ can be added to PYTHONPATH
 ```
 
 ### 3. Install Simulation Dependencies (Optional)
@@ -269,7 +268,7 @@ All real-world data collected via gamepad teleoperation.
 |---------|---------|---------|
 | [pybullet_ur5_robotiq](https://github.com/stepjam/PyBulletrobots) | PyBullet UR5 Robotiq simulation environment | Add to PYTHONPATH |
 | [robopal](https://github.com/None-JX/robopal) | UR5e simulation (experimental, optional) | `pip install robopal` |
-| [ur-rtde](https://github.com/UniversalRobots/RTDE_Python_Client_Library) | UR RTDE real-time communication | `pip install ur-rtde` (or use included `RTDE_Python_Client_Library/`) |
+| [ur-rtde](https://github.com/UniversalRobots/RTDE_Python_Client_Library) | UR RTDE real-time communication | `pip install ur-rtde` |
 
 ---
 
