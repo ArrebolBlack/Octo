@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+dist/
+build/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Data & Models (large files, not tracked)
+data/
+datasets/
+*.ckpt
+*.safetensors
+*.h5
+*.hdf5
+
+# Logs
+*.log
+wandb/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+venv/
+.venv/
+env/
