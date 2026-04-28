@@ -5,7 +5,7 @@
 
 基于 [Octo](https://octo-models.github.io/) 具身智能模型，在 **UR 系列机器人**（UR5/UR3）上实现完整部署的开源 Pipeline。包含仿真环境、真机遥操作、数据采集、模型微调和分布式推理——全部纯 Python 实现。
 
-English | [原版 Octo README](#octo-上游项目)
+[English](README.md) | [原版 Octo README](#octo-上游项目)
 
 > **基于**：[rail-berkeley/octo](https://github.com/rail-berkeley/octo)
 > **已验证平台**：UR5e + Robotiq 夹爪 + Intel Realsense D435，UR3e
