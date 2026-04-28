@@ -1,9 +1,0 @@
-LICENSE
-README.md
-pyproject.toml
-setup.py
-octo/__init__.py
-octo.egg-info/PKG-INFO
-octo.egg-info/SOURCES.txt
-octo.egg-info/dependency_links.txt
-octo.egg-info/top_level.txt

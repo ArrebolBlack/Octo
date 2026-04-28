@@ -117,7 +117,10 @@ pip install --upgrade "jax[cuda11_pip]==0.4.20" -f https://storage.googleapis.co
 
 ```bash
 pip install pyrealsense2 pygame pyserial scipy
-# RTDE library is included as a submodule (RTDE_Python_Client_Library)
+
+# RTDE library (Universal Robots real-time communication)
+pip install ur-rtde
+# Alternatively, the included RTDE_Python_Client_Library/ can be added to PYTHONPATH
 ```
 
 ### 3. Install Simulation Dependencies (Optional)
@@ -237,11 +240,11 @@ Real-world UR5/UR3 pick-place datasets in RLDS format:
 
 ## External Dependencies
 
-| Library | Purpose |
-|---------|---------|
-| [pybullet_ur5_robotiq](https://github.com/stepjam/PyBulletrobots) | PyBullet UR5 Robotiq simulation environment |
-| [robopal](https://github.com/None-JX/robopal) | UR5e simulation (experimental, optional) |
-| [Universal Robots RTDE](https://www.universal-robots.com/articles/ur/interface-communication/ur-real-time-data-exchange-rtde-guide/) | Real-time robot communication |
+| Library | Purpose | Install |
+|---------|---------|---------|
+| [pybullet_ur5_robotiq](https://github.com/stepjam/PyBulletrobots) | PyBullet UR5 Robotiq simulation environment | Add to PYTHONPATH |
+| [robopal](https://github.com/None-JX/robopal) | UR5e simulation (experimental, optional) | `pip install robopal` |
+| [ur-rtde](https://github.com/UniversalRobots/RTDE_Python_Client_Library) | UR RTDE real-time communication | `pip install ur-rtde` (or use included `RTDE_Python_Client_Library/`) |
 
 ---
 

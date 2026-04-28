@@ -74,6 +74,10 @@ pip install --upgrade "jax[cuda11_pip]==0.4.20" -f https://storage.googleapis.co
 
 ```bash
 pip install pyrealsense2 pygame pyserial scipy
+
+# RTDE 库（优傲机器人实时通信）
+pip install ur-rtde
+# 或者将仓库中自带的 RTDE_Python_Client_Library/ 目录添加到 PYTHONPATH
 ```
 
 ### 3. 安装仿真依赖（可选）
@@ -183,9 +187,11 @@ python -m octo_ur5.inference.server_tcp \
 
 | 库 | 用途 |
 |----|------|
-| pybullet_ur5_robotiq | PyBullet UR5 Robotiq 仿真环境 |
-| robopal | UR5e 仿真（实验性，可选） |
-| Universal Robots RTDE | UR 系列机器人实时通信 |
+| 库 | 用途 | 安装方式 |
+|----|------|---------|
+| pybullet_ur5_robotiq | PyBullet UR5 Robotiq 仿真环境 | 添加到 PYTHONPATH |
+| robopal | UR5e 仿真（实验性，可选） | `pip install robopal` |
+| ur-rtde | UR 系列机器人 RTDE 实时通信 | `pip install ur-rtde`（或使用自带的 `RTDE_Python_Client_Library/`） |
 
 ---
 
