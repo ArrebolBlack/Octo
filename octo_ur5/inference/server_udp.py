@@ -1,214 +1,134 @@
+"""UDP inference server for Octo on UR5 — runs on the GPU machine.
+
+Similar to server_tcp.py but uses UDP (lower latency, no connection overhead).
+Note: UDP has a 64KB packet limit — images must be compressed before sending.
+
+Usage:
+    python -m octo_ur5.inference.server_udp \
+        --checkpoint_path=./checkpoints/finetuned \
+        --checkpoint_step=400000 \
+        --port=8000
+"""
+
 from datetime import datetime
 from functools import partial
+import io
 import os
 import time
 
-from absl import app, logging
+from absl import app, flags, logging
 import click
 import cv2
-
 import imageio
 import jax
 import jax.numpy as jnp
 import numpy as np
+import pickle
+import socket
 
 from octo.model.octo_model import OctoModel
 from octo.utils.train_callbacks import supply_rng
-
-import socket
-import pickle
-
 from PIL import Image
-import io
 
 np.set_printoptions(suppress=True)
-
 logging.set_verbosity(logging.WARNING)
 
+FLAGS = flags.FLAGS
+flags.DEFINE_string("checkpoint_path", os.environ.get("OCTO_CHECKPOINT_PATH", "./checkpoints/finetuned"),
+                     "Path to finetuned checkpoint")
+flags.DEFINE_integer("checkpoint_step", int(os.environ.get("OCTO_CHECKPOINT_STEP", "400000")),
+                     "Checkpoint step")
+flags.DEFINE_string("server_ip", "0.0.0.0", "Server bind IP")
+flags.DEFINE_integer("port", 8000, "UDP listen port")
+flags.DEFINE_string("video_save_path", os.environ.get("OCTO_VIDEO_SAVE_PATH", "./videos"), "Video save directory")
+flags.DEFINE_integer("num_steps", 200, "Max rollout steps")
+flags.DEFINE_string("language_instruction", "Pick up the cup and the mug, and then put them down",
+                     "Default language instruction")
 
-##############################################################################
-checkpoint_weights_path = "/home/xiaosa/Newpython/Octo/save_finetuning_chechpoints_real_1"
-checkpoint_step = 4999
-im_size = 256
-video_save_path = "/home/xiaosa/Newpython/Octo/video_save_eval"
-num_steps = 200
-
-STEP_DURATION = 0.2
-
-# window_size = 2
-# action_horizon = 4
-show_image = True
-
-##############################################################################
-
-server_ip = "10.8.14.160"
-server_port = 8000
-
-# 创建UDP Socket
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-# 绑定IP地址和端口
-server_socket.bind((server_ip, server_port))
-# 记录客户端地址
-client_address = None
-
-def receive_data():
-    global client_address
-    while True:
-        data, client_address = server_socket.recvfrom(65507)
-        if data:
-            return pickle.loads(data)
-
-def send_data(data):
-    if client_address:
-        server_socket.sendto(data, client_address)
 
 def decompress_image(compressed_data):
-    """
-    解压缩图像字节数据
-
-    :param compressed_data: 压缩后的字节数据
-    :return: 解压缩后的图像对象
-    """
     buffer = io.BytesIO(compressed_data)
-    image = Image.open(buffer)
-    return np.array(image)
+    return np.array(Image.open(buffer))
+
+
 def main(_):
-    # set up the robot
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server_socket.bind((FLAGS.server_ip, FLAGS.port))
+    client_address = None
+    print(f"UDP server listening on {FLAGS.server_ip}:{FLAGS.port}...")
 
+    def receive_data():
+        nonlocal client_address
+        data, client_address = server_socket.recvfrom(65507)
+        return pickle.loads(data)
 
-    # load models
-    model = OctoModel.load_pretrained(
-        checkpoint_weights_path,
-        checkpoint_step,
-    )
+    def send_data(data):
+        if client_address:
+            server_socket.sendto(data, client_address)
 
+    model = OctoModel.load_pretrained(FLAGS.checkpoint_path, FLAGS.checkpoint_step)
+    stats_key = list(model.dataset_statistics.keys())[0]
+    logging.info("Using dataset stats key: %s", stats_key)
 
-    # create policy functions
-    def sample_actions(
-            pretrained_model: OctoModel,
-            observations,
-            tasks,
-            rng,
-    ):
-        # add batch dim to observations
+    def sample_actions(pretrained_model, observations, tasks, rng):
         observations = jax.tree_map(lambda x: x[None], observations)
         actions = pretrained_model.sample_actions(
-            observations,
-            tasks,
-            rng=rng,
-            unnormalization_statistics=pretrained_model.dataset_statistics[
-                "bridge_dataset"
-            ]["action"],
+            observations, tasks, rng=rng,
+            unnormalization_statistics=model.dataset_statistics[stats_key]["action"],
         )
-        # remove batch dim
         return actions[0]
 
-    policy_fn = supply_rng(
-        partial(
-            sample_actions,
-            model,
-            # argmax=FLAGS.deterministic,
-            # temperature=FLAGS.temperature,
-        )
-    )
-    # 老版的在仿真环境上的是这样：
-    # # the supply_rng wrapper supplies a new random key to sample_actions every time it's called
-    # policy_fn = supply_rng(
-    #     partial(
-    #         model.sample_actions,
-    #         unnormalization_statistics=model.dataset_statistics['austin_buds_dataset_converted_externally_to_rlds']["action"],
-    #     ),
-    # )
+    policy_fn = supply_rng(partial(sample_actions, model))
 
-
+    im_size = 256
     goal_image = jnp.zeros((im_size, im_size, 3), dtype=np.uint8)
-    goal_instruction = "Pick up the cup and the mug, and then put them down"
+    goal_instruction = FLAGS.language_instruction
 
-
-    # goal sampling loop
     while True:
-
-
-        print("Current instruction: ", goal_instruction)
         text = goal_instruction
-        if click.confirm("Take a new instruction?", default=True):
-            text = input("Instruction?")
-        # Format task for the model
+        if click.confirm("Current instruction: '{}'. Change?".format(text), default=True):
+            text = input("Instruction: ")
         task = model.create_tasks(texts=[text])
-        # For logging purposes
         goal_instruction = text
         goal_image = jnp.zeros_like(goal_image)
 
+        input("Press [Enter] to start (waiting for robot client).")
 
-        input("Press [Enter] to start.")
-
-        # reset env
-        # 发送reset指令给client，启动reset，并接收返回的数据
-        reset_message = pickle.dumps({'type': 'reset'})
-        send_data(reset_message)
+        send_data(pickle.dumps({'type': 'reset'}))
         response = receive_data()
         obs = response['obs']
         obs["image_primary"] = decompress_image(obs["image_primary"])
-
-
         time.sleep(2.0)
 
-        # do rollout
-        last_tstep = time.time()
         images = []
         goals = []
         t = 0
-        
-        while t < num_steps:
-            if time.time() > last_tstep + STEP_DURATION:
-                last_tstep = time.time()
+        while t < FLAGS.num_steps:
+            images.append(obs["image_primary"])
+            goals.append(goal_image)
 
-                # save images
-                images.append(obs["image_primary"])
-                goals.append(goal_image)
+            bgr_img = cv2.cvtColor(obs["image_primary"], cv2.COLOR_RGB2BGR)
+            cv2.imshow("img_view", bgr_img)
+            cv2.waitKey(20)
 
-                if show_image:
-                    bgr_img = cv2.cvtColor(obs["image_primary"], cv2.COLOR_RGB2BGR)
-                    cv2.imshow("img_view", bgr_img)
-                    cv2.waitKey(20)
+            action = np.array(policy_fn(obs, task), dtype=np.float32)
 
-                # get action
-                forward_pass_time = time.time()
-                action = np.array(policy_fn(obs, task), dtype=np.float64)
-                print("forward pass time: ", time.time() - forward_pass_time)
+            send_data(pickle.dumps({'type': 'step', 'action': action}))
+            response = receive_data()
+            obs = response['obs']
+            obs["image_primary"] = decompress_image(obs["image_primary"])
+            truncated = response['truncated']
+            t += 1
 
-                # perform environment step
-                start_time = time.time()
+            if truncated:
+                break
 
-                # 发送step指令和动作给client，并接收返回的数据
-                step_message = pickle.dumps({'type': 'step', 'action': action})
-                send_data(step_message)
-                response = receive_data()
-                obs = response['obs']
-                obs["image_primary"] = decompress_image(obs["image_primary"])
-                truncated = response['truncated']
-
-                print("step time: ", time.time() - start_time)
-
-                t += 1
-
-                if truncated:
-                    break
-
-        # save video
-        if video_save_path is not None:
-            os.makedirs(video_save_path, exist_ok=True)
-            curr_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-            save_path = os.path.join(
-                video_save_path,
-                f"{curr_time}.mp4",
-            )
+        if FLAGS.video_save_path:
+            os.makedirs(FLAGS.video_save_path, exist_ok=True)
+            save_path = os.path.join(FLAGS.video_save_path, f"{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.mp4")
             video = np.concatenate([np.stack(goals), np.stack(images)], axis=1)
-            imageio.mimsave(save_path, video, fps=1.0 / STEP_DURATION * 3)
-
-
+            imageio.mimsave(save_path, video, fps=15)
 
 
 if __name__ == "__main__":
-
     app.run(main)
