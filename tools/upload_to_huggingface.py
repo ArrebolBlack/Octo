@@ -189,7 +189,7 @@ def do_upload(datasets, data_root, repo_id):
     # Upload data directories
     for ds in datasets:
         print(f"\nUploading: {ds['name']} from {ds['path']}")
-        api.upload_large_folder(
+        api.upload_folder(
             folder_path=ds["full_path"],
             repo_id=repo_id,
             repo_type="dataset",
