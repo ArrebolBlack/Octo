@@ -34,7 +34,7 @@ A complete open-source pipeline for deploying the [Octo](https://octo-models.git
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                     Complete Pipeline                         │
+│                      Complete Pipeline                        │
 │                                                              │
 │  ┌──────────┐    ┌──────────────┐    ┌───────────────────┐  │
 │  │ Teleop   │───>│ Record Data  │───>│ Train & Deploy    │  │
@@ -43,8 +43,8 @@ A complete open-source pipeline for deploying the [Octo](https://octo-models.git
 │  │ UR5/UR3  │    │ RLDS/TFDS    │    │  ┌─────────────┐  │  │
 │  │ Realsense│    │ Dataset      │    │  │ Inference   │  │  │
 │  │ Gripper  │    │              │    │  │ Server      │  │  │
-│  └──────────┘    └──────────────┘    │  │ (GPU)    ┌──┘  │  │
-│                                      │  └──────────┘     │  │
+│  └──────────┘    └──────────────┘    │  │ (GPU)    ┌─┘   │  │
+│                                      │  └───────────┘    │  │
 │                                      │     TCP/UDP │     │  │
 │                                      │  ┌──────────▼──┐  │  │
 │                                      │  │ Robot Client │  │  │
