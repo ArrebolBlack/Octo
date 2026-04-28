@@ -1,6 +1,7 @@
 # Octo UR5：Octo 具身智能模型在优傲机器人上的真机部署
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![HuggingFace Dataset](https://img.shields.io/badge/Dataset-HuggingFace-blue)](https://huggingface.co/datasets/JiaqiYin/octo_ur5_dataset)
 
 基于 [Octo](https://octo-models.github.io/) 具身智能模型，在 **UR 系列机器人**（UR5/UR3）上实现完整部署的开源 Pipeline。包含仿真环境、真机遥操作、数据采集、模型微调和分布式推理——全部纯 Python 实现。
 
@@ -8,6 +9,8 @@ English | [原版 Octo README](#octo-上游项目)
 
 > **基于**：[rail-berkeley/octo](https://github.com/rail-berkeley/octo)
 > **已验证平台**：UR5e + Robotiq 夹爪 + Intel Realsense D435，UR3e
+>
+> **数据集**：10 个数据集，98 个 episode（约 3.3GB）— [HuggingFace](https://huggingface.co/datasets/JiaqiYin/octo_ur5_dataset) | [百度网盘](https://pan.baidu.com/s/5aeV1f-_CITH-ZKrlKf5MqQ)
 
 ---
 
@@ -203,7 +206,7 @@ python -m octo_ur5.inference.client_robot_tcp
 ### 获取方式
 
 - **HuggingFace**：[https://huggingface.co/datasets/JiaqiYin/octo_ur5_dataset](https://huggingface.co/datasets/JiaqiYin/octo_ur5_dataset)
-- **百度网盘**：详见联系方式
+- **百度网盘**：[https://pan.baidu.com/s/5aeV1f-_CITH-ZKrlKf5MqQ](https://pan.baidu.com/s/5aeV1f-_CITH-ZKrlKf5MqQ)
 
 ---
 
@@ -216,6 +219,10 @@ python -m octo_ur5.inference.client_robot_tcp
 | ur-rtde | UR 系列机器人 RTDE 实时通信 | `pip install ur-rtde`（或使用自带的 `RTDE_Python_Client_Library/`） |
 
 ---
+
+## 文档
+
+- [**Octo 复现技术报告**](docs/Octo复现.pdf) — 11 页技术报告，涵盖模型架构、Pipeline 设计、数据集详情、UR3/UR5 实验结果与分析。
 
 ## Octo 上游项目
 

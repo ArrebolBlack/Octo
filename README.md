@@ -1,6 +1,7 @@
 # Octo UR5: Real-World Deployment of Octo on Universal Robots
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![HuggingFace Dataset](https://img.shields.io/badge/Dataset-HuggingFace-blue)](https://huggingface.co/datasets/JiaqiYin/octo_ur5_dataset)
 
 A complete open-source pipeline for deploying the [Octo](https://octo-models.github.io/) embodied intelligence model on **UR-series robots** (UR5/UR3). Includes simulation environments, real-robot teleoperation, data collection, finetuning, and distributed inference — all in pure Python.
 
@@ -8,6 +9,8 @@ A complete open-source pipeline for deploying the [Octo](https://octo-models.git
 
 > **Based on**: [rail-berkeley/octo](https://github.com/rail-berkeley/octo)
 > **Tested on**: UR5e + Robotiq gripper + Intel Realsense D435, UR3e
+>
+> **Datasets**: 10 datasets, 98 episodes (~3.3GB) — [HuggingFace](https://huggingface.co/datasets/JiaqiYin/octo_ur5_dataset) | [Baidu Netdisk](https://pan.baidu.com/s/5aeV1f-_CITH-ZKrlKf5MqQ)
 
 ---
 
@@ -257,7 +260,7 @@ All real-world data collected via gamepad teleoperation.
 ### Access
 
 - **HuggingFace**: [https://huggingface.co/datasets/JiaqiYin/octo_ur5_dataset](https://huggingface.co/datasets/JiaqiYin/octo_ur5_dataset)
-- **Baidu Netdisk**: See contact info below
+- **Baidu Netdisk**: [https://pan.baidu.com/s/5aeV1f-_CITH-ZKrlKf5MqQ](https://pan.baidu.com/s/5aeV1f-_CITH-ZKrlKf5MqQ)
 
 ---
 
@@ -270,6 +273,10 @@ All real-world data collected via gamepad teleoperation.
 | [ur-rtde](https://github.com/UniversalRobots/RTDE_Python_Client_Library) | UR RTDE real-time communication | `pip install ur-rtde` (or use included `RTDE_Python_Client_Library/`) |
 
 ---
+
+## Documentation
+
+- [**Octo Reproduction Presentation**](docs/Octo复现.pdf) — 11-page technical slides covering model architecture, pipeline design, dataset details, and UR3/UR5 experiment results (in Chinese).
 
 ## Octo Upstream
 
