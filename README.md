@@ -1,168 +1,284 @@
-# Octo
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://githubtocolab.com/octo-models/octo/blob/main/examples/01_inference_pretrained.ipynb)
+# Octo UR5: Real-World Deployment of Octo on Universal Robots
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Static Badge](https://img.shields.io/badge/Project-Page-a)](https://octo-models.github.io/)
-![](https://github.com/rail-berkeley/octo/workflows/run-debug/badge.svg)
-![](https://github.com/rail-berkeley/octo/workflows/pre-commit/badge.svg)
 
-This repo contains code for training and finetuning Octo generalist robotic policies (GRPs).
-Octo models are transformer-based diffusion policies, trained on a diverse mix of 800k robot trajectories.
+A complete open-source pipeline for deploying the [Octo](https://octo-models.github.io/) embodied intelligence model on **UR-series robots** (UR5/UR3). Includes simulation environments, real-robot teleoperation, data collection, finetuning, and distributed inference — all in pure Python.
 
-## Get Started
+[中文文档](README_zh.md) | [Original Octo README](#octo-upstream)
 
-Follow the installation instructions, then load a pretrained Octo model! See [examples](examples/) for guides to zero-shot evaluation and finetuning and [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1z0vELj_lX9OWeoMG_WvXnQs43aPOEAhz?usp=sharing)
-for an inference example.
+> **Based on**: [rail-berkeley/octo](https://github.com/rail-berkeley/octo)
+> **Tested on**: UR5e + Robotiq gripper + Intel Realsense D435, UR3e
 
-```python
-from octo.model.octo_model import OctoModel
-model = OctoModel.load_pretrained("hf://rail-berkeley/octo-base-1.5")
-print(model.get_pretty_spec())
+---
+
+## What's New (vs. Octo Upstream)
+
+| Feature | Octo Upstream | This Repo |
+|---------|:---:|:---:|
+| Real UR5/UR3 robot control (RTDE) | ❌ | ✅ |
+| Servo gripper control (Modbus RTU) | ❌ | ✅ |
+| Gamepad teleoperation (6-DoF + gripper) | ❌ | ✅ |
+| Realsense camera integration | ❌ | ✅ |
+| PyBullet UR5 simulation | ❌ | ✅ |
+| RLDS/TFDS data recording pipeline | ❌ | ✅ |
+| Distributed inference (GPU ↔ Robot via TCP/UDP) | ❌ | ✅ |
+| UR-series finetune configs (single + multi-dataset) | ❌ | ✅ |
+| Real-world UR5/UR3 datasets | ❌ | ✅ |
+
+---
+
+## Architecture
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                     Complete Pipeline                         │
+│                                                              │
+│  ┌──────────┐    ┌──────────────┐    ┌───────────────────┐  │
+│  │ Teleop   │───>│ Record Data  │───>│ Train & Deploy    │  │
+│  │ (Gamepad)│    │ (envlogger)  │    │ (Octo finetune)   │  │
+│  │          │    │              │    │                   │  │
+│  │ UR5/UR3  │    │ RLDS/TFDS    │    │  ┌─────────────┐  │  │
+│  │ Realsense│    │ Dataset      │    │  │ Inference   │  │  │
+│  │ Gripper  │    │              │    │  │ Server      │  │  │
+│  └──────────┘    └──────────────┘    │  │ (GPU)    ┌──┘  │  │
+│                                      │  └──────────┘     │  │
+│                                      │     TCP/UDP │     │  │
+│                                      │  ┌──────────▼──┐  │  │
+│                                      │  │ Robot Client │  │  │
+│                                      │  │ (edge)       │  │  │
+│                                      │  └─────────────┘  │  │
+│                                      └───────────────────┘  │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-![Octo model](docs/assets/teaser.jpg)
+---
 
-Out of the box, Octo supports multiple RGB camera inputs, can control various robot arms,
-and can be instructed via language commands or goal images.
-Octo uses a modular attention structure in its transformer backbone, allowing it to be effectively finetuned
-to robot setups with new sensory inputs, action spaces, and morphologies, using only a small target domain
-dataset and accessible compute budgets.
+## Repository Structure
 
+```
+octo/                          # Octo model core (upstream, with dataset config additions)
+octo_ur5/                      # ★ All original contributions
+├── real/                      # Real robot: UR5 controller, gripper, camera, gamepad
+│   ├── robot_controller.py   # RTDE control + servoL + gripper integration
+│   ├── gripper_controller.py # Serial Modbus RTU gripper (0–1000 range)
+│   ├── utilities.py          # Realsense D435 + Pygame gamepad controller
+│   └── real_ur5_env.py       # Gym wrapper for real UR5 + camera + gripper
+├── sim/                       # Simulation environments
+│   ├── pybullet_ur5_env.py   # PyBullet UR5 Robotiq env (external dep)
+│   └── robopal_ur5_env.py    # Robopal UR5e env (experimental)
+├── inference/                 # Distributed inference: GPU server ↔ robot client
+│   ├── server_tcp.py         # TCP inference server (runs on GPU machine)
+│   ├── server_udp.py         # UDP inference server (lower latency)
+│   └── client_env.py         # Socket-based Gym env (runs on robot machine)
+├── data_collection/           # Data collection pipeline
+│   ├── teleop_main.py        # Gamepad teleoperation main loop
+│   ├── dataset_recorder.py   # Record to RLDS/TFDS via envlogger
+│   └── dataset_reader.py     # Inspect stored trajectory datasets
+├── configs/                   # Finetune configuration files
+│   ├── finetune_config.py    # Single-dataset config (UR5)
+│   └── finetune_config_multi_dataset.py  # Multi-dataset (UR5 + UR3)
+├── scripts/                   # Training & evaluation entry points
+│   ├── finetune_simple.py    # Standalone finetuning script
+│   ├── eval_sim.py           # PyBullet simulation evaluation
+│   ├── eval_real.py          # Real robot evaluation (direct)
+│   └── eval_real_socket.py   # Real robot evaluation (socket)
+├── gym_wrappers.py            # HistoryWrapper, RHCWrapper, TemporalEnsembleWrapper
+├── gym2dmenv.py               # Gym → dm_env adapter (for envlogger)
+└── tests/                     # Hardware connection tests
+    ├── test_camera.py
+    ├── test_joystick.py
+    └── test_ur_rtde.py
+examples/                      # Octo upstream examples (preserved as-is)
+scripts/                       # Octo upstream training scripts
+docs/                          # Documentation and presentations
+```
+
+---
 
 ## Installation
+
+### 1. Clone & Install Octo
+
 ```bash
+git clone https://github.com/ArrebolBlack/Octo.git
+cd Octo
+git checkout refactor
+
 conda create -n octo python=3.10
 conda activate octo
 pip install -e .
 pip install -r requirements.txt
-```
-For GPU:
-```bash
+
+# GPU (CUDA 11)
 pip install --upgrade "jax[cuda11_pip]==0.4.20" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 ```
 
-For TPU
+### 2. Install Real Robot Dependencies
+
 ```bash
-pip install --upgrade "jax[tpu]==0.4.20" -f https://storage.googleapis.com/jax-releases/libtpu_releases.html
+pip install pyrealsense2 pygame pyserial scipy
+# RTDE library is included as a submodule (RTDE_Python_Client_Library)
 ```
-See the [Jax Github page](https://github.com/google/jax) for more details on installing Jax.
 
-Test the installation by finetuning on the debug dataset:
+### 3. Install Simulation Dependencies (Optional)
+
 ```bash
-python scripts/finetune.py --config.pretrained_path=hf://rail-berkeley/octo-small-1.5 --debug
+pip install pybullet envlogger tensorflow-datasets dm-env
+# PyBullet UR5 Robotiq env: add pybullet_ur5_robotiq to PYTHONPATH
 ```
 
-## Checkpoints
+### 4. Configure Environment Variables
 
-You can find pretrained Octo checkpoints [here](https://huggingface.co/rail-berkeley).
-At the moment we provide the following model versions:
-
-| Model                                                         | Inference on 1x NVIDIA 4090 | Size       |
-|---------------------------------------------------------------|-----------------------------|------------|
-| [Octo-Base](https://huggingface.co/rail-berkeley/octo-base)   | 13 it/sec                   | 93M Params |
-| [Octo-Small](https://huggingface.co/rail-berkeley/octo-small) | 17 it/sec                   | 27M Params |
-
-
-## Examples
-
-We provide simple [example scripts](examples) that demonstrate how to use and finetune Octo models,
-as well as how to use our data loader independently. We provide the following examples:
-
-|                                                                      |                                                                                                                    |
-|----------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
-| [Octo Inference](examples/01_inference_pretrained.ipynb)             | Minimal example for loading and running a pretrained Octo model                                                    |
-| [Octo Finetuning](examples/02_finetune_new_observation_action.py)    | Minimal example for finetuning a pretrained Octo models on a small dataset with a new observation and action space |
-| [Octo Rollout](examples/03_eval_finetuned.py)                        | Run a rollout of a pretrained Octo policy in a Gym environment                                                     |
-| [Octo Robot Eval](examples/04_eval_finetuned_on_robot.py)            | Evaluate a pretrained Octo model on a real WidowX robot                                                            |
-| [OpenX Dataloader Intro](examples/05_dataloading.ipynb)              | Walkthrough of the features of our Open X-Embodiment data loader                                                   |
-| [OpenX PyTorch Dataloader](examples/06_pytorch_oxe_dataloader.ipynb) | Standalone Open X-Embodiment data loader in PyTorch                                                                |
-
-
-## Octo Pretraining
-
-To reproduce our Octo pretraining on 800k robot trajectories, run:
 ```bash
-python scripts/train.py --config scripts/configs/octo_pretrain_config.py:<size> --name=octo --config.dataset_kwargs.oxe_kwargs.data_dir=... --config.dataset_kwargs.oxe_kwargs.data_mix=oxe_magic_soup ...
+export UR5_ROBOT_IP="192.168.4.100"       # Robot IP
+export UR5_GRIPPER_PORT="COM5"            # Gripper serial port
+export OCTO_PRETRAINED_PATH="./checkpoints/octo-base-1.5"
+export OCTO_UR5_DATA_DIR="./data/my_dataset/1.0.0"
+export OCTO_SAVE_DIR="./checkpoints/finetuned"
 ```
 
-To download the pretraining dataset from the [Open X-Embodiment Dataset](https://robotics-transformer-x.github.io/),
-install the [rlds_dataset_mod package](https://github.com/kpertsch/rlds_dataset_mod)
-and run the [prepare_open_x.sh script](https://github.com/kpertsch/rlds_dataset_mod/blob/main/prepare_open_x.sh).
-The total size of the pre-processed dataset is ~1.2TB.
+---
 
-We run pretraining using a TPUv4-128 pod in 8 hours for the Octo-S model and in 14 hours for Octo-B.
+## Quick Start: Complete Pipeline
 
+### Step 1 — Test Hardware
 
-## Octo Finetuning
-
-We provide a [minimal example](examples/02_finetune_new_observation_action.py) for finetuning with a new observation and action space.
-
-We also provide a more advanced finetuning script that allows you to change hyperparameters via a config file and logs finetuning
-metrics. To run advanced finetuning, use:
 ```bash
-python scripts/finetune.py --config.pretrained_path=hf://rail-berkeley/octo-small-1.5
+python -m octo_ur5.tests.test_ur_rtde     # Test UR5 RTDE connection
+python -m octo_ur5.tests.test_camera      # Test Realsense camera
+python -m octo_ur5.tests.test_joystick    # Test gamepad
 ```
 
-We offer three finetuning modes depending on the parts of the model that are kept frozen: ```head_only```, ```head_mlp_only```, and ```full``` to finetune the full model.
-Additionally, one can specify the task type to finetune with: ```image_conditioned```, ```language_conditioned``` or ```multimodal``` for both.
-For example, to finetune the full transformer with image inputs only use:
-```--config=finetune_config.py:full,image_conditioned```.
+### Step 2 — Teleoperate & Collect Data
 
-
-## Octo Evaluation
-
-Loading and running a trained Octo model is as easy as:
-```python
-from octo.model import OctoModel
-
-model = OctoModel.load_pretrained("hf://rail-berkeley/octo-small-1.5")
-task = model.create_tasks(texts=["pick up the spoon"])
-action = model.sample_actions(observation, task, rng=jax.random.PRNGKey(0))
+**Real robot teleoperation:**
+```bash
+python -m octo_ur5.data_collection.teleop_main
 ```
 
-We provide examples for evaluating Octo [in a simulated Gym environment](examples/03_eval_finetuned.py) as well
-as [on a real WidowX robot](examples/04_eval_finetuned_on_robot.py).
+**Record simulation data to RLDS/TFDS format:**
+```bash
+python -m octo_ur5.data_collection.dataset_recorder \
+    --data_dir=./data/output --num_episodes=10
+```
 
-To evaluate on your own environment, simply wrap it in a Gym interface and follow the instructions in the
-[Eval Env README](examples/envs/README.md).
+**Inspect recorded data:**
+```bash
+python -m octo_ur5.data_collection.dataset_reader
+```
 
+### Step 3 — Finetune Octo
 
-## Code Structure
+**Simple finetuning:**
+```bash
+python -m octo_ur5.scripts.finetune_simple \
+    --pretrained_path=./checkpoints/octo-base-1.5 \
+    --data_dir=./data/my_dataset/1.0.0 \
+    --save_dir=./checkpoints/finetuned \
+    --batch_size=8 --num_steps=5000
+```
 
-|                     | File                                                    | Description                                                                   |
-|---------------------|---------------------------------------------------------|-------------------------------------------------------------------------------|
-| Hyperparameters     | [config.py](scripts/configs/config.py)                  | Defines all hyperparameters for the training run.                             |
-| Pretraining Loop    | [train.py](scripts/train.py)                            | Main pretraining script.                                                         |
-| Finetuning Loop     | [finetune.py](scripts/finetune.py)                      | Main finetuning script.                                                       |
-| Datasets            | [dataset.py](octo/data/dataset.py)                      | Functions for creating single / interleaved datasets + data augmentation.     |
-| Tokenizers          | [tokenizers.py](octo/model/components/tokenizers.py)    | Tokenizers that encode image / text inputs into tokens.                       |
-| Octo Model          | [octo_model.py](octo/model/octo_model.py)               | Main entry point for interacting with Octo models: loading, saving, and inference. |
-| Model Architecture  | [octo_module.py](octo/model/octo_module.py)             | Combines token sequencing, transformer backbone and readout heads.            |
-| Visualization       | [visualization_lib.py](octo/utils/visualization_lib.py) | Utilities for offline qualitative & quantitative eval.                        |
+**Using Octo's advanced training script:**
+```bash
+python scripts/finetune.py \
+    --config=octo_ur5/configs/finetune_config.py:full,language_conditioned
+```
 
-## FAQ
-#### What is the `timestep_pad_mask` in the observation dictionary?
-The `timestep_pad_mask` indicates which observations should be attended to, which is important when using multiple timesteps of observation history. Octo was trained with a history window size of 2, meaning the model can predict an action using both the current observation and the previous observation. However, at the very beginning of the trajectory, there is no previous observation, so we need to set `timestep_pad_mask=False` at the corresponding index. If you use Octo with a window size of 1, `timestep_pad_mask` should always just be `[True]`, indicating that the one and only observation in the window should be attended to. Note that if you wrap your robot environment with the `HistoryWrapper` (see [gym_wrappers.py](octo/utils/gym_wrappers.py)), the `timestep_pad_mask` key will be added to the observation dictionary for you.
-#### What is `pad_mask_dict` in the observation dictionary?
-While `timestep_pad_mask` indicates which observations should be attended to on a timestep level, `pad_mask_dict` indicates which elements of the observation should be attended to within a single timestep. For example, for datasets without language labels, `pad_mask_dict["language_instruction"]` is set to `False`. For datasets without a wrist camera, `pad_mask_dict["image_wrist"]` is set to `False`. For convenience, if a key is missing from the observation dict, it is equivalent to setting `pad_mask_dict` to `False` for that key.
-#### Does `model.sample_actions([...])` return the full trajectory to solve a task?
-Octo was pretrained with an action chunking size of 4, meaning it predicts the next 4 actions at once. You can choose to execute all these actions before sampling new ones, or only execute the first action before sampling new ones (also known as receding horizon control). You can also do something more advanced like [temporal ensembling](octo/utils/gym_wrappers.py).
+**Multi-dataset (UR5 + UR3):**
+```bash
+export OCTO_UR5_DATA_ROOT="./data"
+python scripts/finetune_multi_dataset.py \
+    --config=octo_ur5/configs/finetune_config_multi_dataset.py:full,language_conditioned
+```
 
-## Updates for Version 1.5
-- Improved cross-attention between visual and language tokens by repeating language tokens at every timestep in the context window.
-- Augmented the language instructions in the data with rephrasings from GPT-3.5.
-- Bug fixes:
-  - Turned off dropout in the diffusion head due to incompatibility with layer norm.
-  - Fixed an off-by-one error with the attention mask.
-  - Fixed an issue where different image augmentations did not get fresh random seeds.
+### Step 4 — Evaluate & Deploy
+
+**Simulation:**
+```bash
+python -m octo_ur5.scripts.eval_sim \
+    --finetuned_path=./checkpoints/finetuned --num_episodes=3
+```
+
+**Real robot (direct — single machine):**
+```bash
+python -m octo_ur5.scripts.eval_real \
+    --checkpoint_path=./checkpoints/finetuned \
+    --checkpoint_step=400000 --port=1293
+```
+
+**Real robot (distributed — GPU server + robot client):**
+
+On GPU server:
+```bash
+python -m octo_ur5.inference.server_tcp \
+    --checkpoint_path=./checkpoints/finetuned \
+    --checkpoint_step=400000 --port=1242
+```
+
+On robot machine, the client env (`octo_ur5.inference.client_env`) handles the robot side.
+
+---
+
+## Datasets
+
+Real-world UR5/UR3 pick-place datasets in RLDS format:
+
+| Dataset | Robot | Task | Episodes |
+|---------|-------|------|----------|
+| ur5_put_cube_on_plate_slow | UR5 | Pick cube, place on plate | 10 |
+| ur3_pick_cup_single_slow | UR3 | Pick cup | 20 |
+| ur3_pick_golden_cup_single_slow | UR3 | Pick golden cup | 10 |
+| ur3_pick_silver_cup_single_slow | UR3 | Pick silver cup | 10 |
+
+- **HuggingFace**: [Coming soon]
+- **Baidu Netdisk**: See contact info below
+
+---
+
+## External Dependencies
+
+| Library | Purpose |
+|---------|---------|
+| [pybullet_ur5_robotiq](https://github.com/stepjam/PyBulletrobots) | PyBullet UR5 Robotiq simulation environment |
+| [robopal](https://github.com/None-JX/robopal) | UR5e simulation (experimental, optional) |
+| [Universal Robots RTDE](https://www.universal-robots.com/articles/ur/interface-communication/ur-real-time-data-exchange-rtde-guide/) | Real-time robot communication |
+
+---
+
+## Octo Upstream
+
+This repository includes the full Octo model codebase from [rail-berkeley/octo](https://github.com/rail-berkeley/octo). For Octo-specific documentation (model architecture, pretraining, original examples), see:
+
+- [Octo Examples](examples/)
+- [Octo Training Scripts](scripts/)
+- [Octo Model Documentation](https://octo-models.github.io/)
+
+---
 
 ## Citation
 
-```
+```bibtex
+@misc{octo_ur5,
+  author = {ArrebolBlack},
+  title = {Octo UR5: Real-World Deployment of Octo on Universal Robots},
+  year = {2024},
+  url = {https://github.com/ArrebolBlack/Octo}
+}
+
 @inproceedings{octo_2023,
     title={Octo: An Open-Source Generalist Robot Policy},
     author = {{Octo Model Team} and Dibya Ghosh and Homer Walke and Karl Pertsch and Kevin Black and Oier Mees and Sudeep Dasari and Joey Hejna and Charles Xu and Jianlan Luo and Tobias Kreiman and {You Liang} Tan and Pannag Sanketi and Quan Vuong and Ted Xiao and Dorsa Sadigh and Chelsea Finn and Sergey Levine},
     booktitle = {Proceedings of Robotics: Science and Systems},
-    address  = {Delft, Netherlands},
     year = {2024},
 }
 ```
+
+## Contact
+
+- **GitHub**: [ArrebolBlack](https://github.com/ArrebolBlack)
+- **WeChat**: wxid_aotp6u5i4n522
+- **Email**: yjqhit@gmail.com
+
+## License
+
+MIT License (inherited from [Octo](https://github.com/rail-berkeley/octo)).

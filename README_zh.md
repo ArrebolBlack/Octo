@@ -1,0 +1,228 @@
+# Octo UR5：Octo 具身智能模型在优傲机器人上的真机部署
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+基于 [Octo](https://octo-models.github.io/) 具身智能模型，在 **UR 系列机器人**（UR5/UR3）上实现完整部署的开源 Pipeline。包含仿真环境、真机遥操作、数据采集、模型微调和分布式推理——全部纯 Python 实现。
+
+English | [原版 Octo README](#octo-上游项目)
+
+> **基于**：[rail-berkeley/octo](https://github.com/rail-berkeley/octo)
+> **已验证平台**：UR5e + Robotiq 夹爪 + Intel Realsense D435，UR3e
+
+---
+
+## 相比 Octo 原仓库的新贡献
+
+| 功能 | Octo 原仓库 | 本仓库 |
+|------|:---:|:---:|
+| UR5/UR3 真机控制（RTDE 协议） | ❌ | ✅ |
+| 伺服夹爪控制（Modbus RTU 串口） | ❌ | ✅ |
+| 手柄遥操作（6自由度 + 夹爪） | ❌ | ✅ |
+| Realsense 相机集成 | ❌ | ✅ |
+| PyBullet UR5 仿真环境 | ❌ | ✅ |
+| RLDS/TFDS 数据录制 Pipeline | ❌ | ✅ |
+| 分布式推理（GPU ↔ 机器人，TCP/UDP） | ❌ | ✅ |
+| UR 系列微调配置（单数据集 + 多数据集） | ❌ | ✅ |
+| 真机 UR5/UR3 数据集 | ❌ | ✅ |
+
+---
+
+## 系统架构
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                      完整 Pipeline                            │
+│                                                              │
+│  ┌──────────┐    ┌──────────────┐    ┌───────────────────┐  │
+│  │ 遥操作   │───>│ 数据采集     │───>│ 训练与部署        │  │
+│  │ (手柄)   │    │ (envlogger)  │    │ (Octo 微调)       │  │
+│  │          │    │              │    │                   │  │
+│  │ UR5/UR3  │    │ RLDS/TFDS    │    │  ┌─────────────┐  │  │
+│  │ Realsense│    │ 数据集       │    │  │ 推理服务器   │  │  │
+│  │ 夹爪     │    │              │    │  │ (GPU端)   ┌──┘  │  │
+│  └──────────┘    └──────────────┘    │  └──────────┘     │  │
+│                                      │    TCP/UDP │      │  │
+│                                      │  ┌──────────▼──┐   │  │
+│                                      │  │ 机器人客户端 │   │  │
+│                                      │  │ (边缘端)     │   │  │
+│                                      │  └─────────────┘   │  │
+│                                      └───────────────────┘  │
+└──────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 安装
+
+### 1. 克隆并安装 Octo
+
+```bash
+git clone https://github.com/ArrebolBlack/Octo.git
+cd Octo
+git checkout refactor
+
+conda create -n octo python=3.10
+conda activate octo
+pip install -e .
+pip install -r requirements.txt
+
+# GPU (CUDA 11)
+pip install --upgrade "jax[cuda11_pip]==0.4.20" -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+```
+
+### 2. 安装真机依赖
+
+```bash
+pip install pyrealsense2 pygame pyserial scipy
+```
+
+### 3. 安装仿真依赖（可选）
+
+```bash
+pip install pybullet envlogger tensorflow-datasets dm-env
+```
+
+### 4. 配置环境变量
+
+```bash
+export UR5_ROBOT_IP="192.168.4.100"
+export UR5_GRIPPER_PORT="COM5"              # Linux: /dev/ttyUSB0
+export OCTO_PRETRAINED_PATH="./checkpoints/octo-base-1.5"
+export OCTO_UR5_DATA_DIR="./data/my_dataset/1.0.0"
+export OCTO_SAVE_DIR="./checkpoints/finetuned"
+```
+
+---
+
+## 快速开始：完整流程
+
+### 第 1 步 — 测试硬件连接
+
+```bash
+python -m octo_ur5.tests.test_ur_rtde     # 测试 UR5 RTDE 连接
+python -m octo_ur5.tests.test_camera      # 测试 Realsense 相机
+python -m octo_ur5.tests.test_joystick    # 测试手柄
+```
+
+### 第 2 步 — 遥操作与数据采集
+
+**真机遥操作：**
+```bash
+python -m octo_ur5.data_collection.teleop_main
+```
+
+**录制仿真数据（RLDS/TFDS 格式）：**
+```bash
+python -m octo_ur5.data_collection.dataset_recorder \
+    --data_dir=./data/output --num_episodes=10
+```
+
+**查看已录制的轨迹：**
+```bash
+python -m octo_ur5.data_collection.dataset_reader
+```
+
+### 第 3 步 — 微调 Octo
+
+**简单微调：**
+```bash
+python -m octo_ur5.scripts.finetune_simple \
+    --pretrained_path=./checkpoints/octo-base-1.5 \
+    --data_dir=./data/my_dataset/1.0.0 \
+    --save_dir=./checkpoints/finetuned \
+    --batch_size=8 --num_steps=5000
+```
+
+**使用 Octo 高级训练脚本：**
+```bash
+python scripts/finetune.py \
+    --config=octo_ur5/configs/finetune_config.py:full,language_conditioned
+```
+
+### 第 4 步 — 评估与部署
+
+**仿真环境评估：**
+```bash
+python -m octo_ur5.scripts.eval_sim \
+    --finetuned_path=./checkpoints/finetuned --num_episodes=3
+```
+
+**真机评估（直连——单机模式）：**
+```bash
+python -m octo_ur5.scripts.eval_real \
+    --checkpoint_path=./checkpoints/finetuned \
+    --checkpoint_step=400000 --port=1293
+```
+
+**真机评估（分布式——GPU 服务器 + 机器人客户端）：**
+
+GPU 服务器端：
+```bash
+python -m octo_ur5.inference.server_tcp \
+    --checkpoint_path=./checkpoints/finetuned \
+    --checkpoint_step=400000 --port=1242
+```
+
+---
+
+## 数据集
+
+| 数据集 | 机器人 | 任务 | Episode 数 |
+|--------|--------|------|-----------|
+| ur5_put_cube_on_plate_slow | UR5 | 抓取方块放到盘子上 | 10 |
+| ur3_pick_cup_single_slow | UR3 | 抓取杯子 | 20 |
+| ur3_pick_golden_cup_single_slow | UR3 | 抓取金杯子 | 10 |
+| ur3_pick_silver_cup_single_slow | UR3 | 抓取银杯子 | 10 |
+
+- **HuggingFace**：即将发布
+- **百度网盘**：详见联系方式
+
+---
+
+## 外部依赖
+
+| 库 | 用途 |
+|----|------|
+| pybullet_ur5_robotiq | PyBullet UR5 Robotiq 仿真环境 |
+| robopal | UR5e 仿真（实验性，可选） |
+| Universal Robots RTDE | UR 系列机器人实时通信 |
+
+---
+
+## Octo 上游项目
+
+本仓库包含 [rail-berkeley/octo](https://github.com/rail-berkeley/octo) 的完整模型代码。Octo 相关文档请参阅：
+
+- [Octo 示例](examples/)
+- [Octo 训练脚本](scripts/)
+- [Octo 官方文档](https://octo-models.github.io/)
+
+---
+
+## 引用
+
+```bibtex
+@misc{octo_ur5,
+  author = {ArrebolBlack},
+  title = {Octo UR5: Real-World Deployment of Octo on Universal Robots},
+  year = {2024},
+  url = {https://github.com/ArrebolBlack/Octo}
+}
+
+@inproceedings{octo_2023,
+    title={Octo: An Open-Source Generalist Robot Policy},
+    author = {{Octo Model Team} and Dibya Ghosh and Homer Walke and Karl Pertsch and Kevin Black and Oier Mees and Sudeep Dasari and Joey Hejna and Charles Xu and Jianlan Luo and Tobias Kreiman and {You Liang} Tan and Pannag Sanketi and Quan Vuong and Ted Xiao and Dorsa Sadigh and Chelsea Finn and Sergey Levine},
+    booktitle = {Proceedings of Robotics: Science and Systems},
+    year = {2024},
+}
+```
+
+## 联系方式
+
+- **GitHub**：[ArrebolBlack](https://github.com/ArrebolBlack)
+- **微信**：wxid_aotp6u5i4n522
+- **邮箱**：yjqhit@gmail.com
+
+## 许可证
+
+MIT License（继承自 [Octo](https://github.com/rail-berkeley/octo)）。
