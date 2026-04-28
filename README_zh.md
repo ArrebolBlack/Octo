@@ -34,23 +34,23 @@ English | [原版 Octo README](#octo-上游项目)
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                      Complete Pipeline                        │
+│                      Complete Pipeline                       │
 │                                                              │
-│  ┌──────────┐    ┌──────────────┐    ┌───────────────────┐  │
-│  │ Teleop   │───>│ Record Data  │───>│ Train & Deploy    │  │
-│  │ (Gamepad)│    │ (envlogger)  │    │ (Octo finetune)   │  │
-│  │          │    │              │    │                   │  │
-│  │ UR5/UR3  │    │ RLDS/TFDS    │    │  ┌─────────────┐  │  │
-│  │ Realsense│    │ Dataset      │    │  │ Inference   │  │  │
-│  │ Gripper  │    │              │    │  │ Server      │  │  │
-│  └──────────┘    └──────────────┘    │  │ (GPU)    ┌─┘   │  │
-│                                      │  └───────────┘    │  │
-│                                      │     TCP/UDP │     │  │
-│                                      │  ┌──────────▼──┐  │  │
-│                                      │  │ Robot Client │  │  │
-│                                      │  │ (edge)       │  │  │
-│                                      │  └─────────────┘  │  │
-│                                      └───────────────────┘  │
+│  ┌──────────┐    ┌──────────────┐    ┌────────────────────┐  │
+│  │ Teleop   │───>│ Record Data  │───>│ Train & Deploy     │  │
+│  │ (Gamepad)│    │ (envlogger)  │    │ (Octo finetune)    │  │
+│  │          │    │              │    │                    │  │
+│  │ UR5/UR3  │    │ RLDS/TFDS    │    │ ┌──────────────┐   │  │
+│  │ Realsense│    │ Dataset      │    │ │ Inference    │   │  │
+│  │ Gripper  │    │              │    │ │ Server       │   │  │
+│  └──────────┘    └──────────────┘    │ │ (GPU)        │   │  │
+│                                      │ └──────────────┘   │  │
+│                                      │       TCP/UDP │    │  │
+│                                      │ ┌───────────┼──┐   │  │
+│                                      │ │ Robot Client │   │  │
+│                                      │ │ (edge)       │   │  │
+│                                      │ └──────────────┘   │  │
+│                                      └────────────────────┘  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -255,7 +255,6 @@ python -m octo_ur5.inference.client_robot_tcp
 
 ## 联系方式
 
-- **GitHub**：[ArrebolBlack](https://github.com/ArrebolBlack)
 - **微信**：wxid_aotp6u5i4n522
 - **邮箱**：yjqhit@gmail.com
 

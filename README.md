@@ -34,23 +34,23 @@ A complete open-source pipeline for deploying the [Octo](https://octo-models.git
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
-│                      Complete Pipeline                        │
+│                      Complete Pipeline                       │
 │                                                              │
-│  ┌──────────┐    ┌──────────────┐    ┌───────────────────┐  │
-│  │ Teleop   │───>│ Record Data  │───>│ Train & Deploy    │  │
-│  │ (Gamepad)│    │ (envlogger)  │    │ (Octo finetune)   │  │
-│  │          │    │              │    │                   │  │
-│  │ UR5/UR3  │    │ RLDS/TFDS    │    │  ┌─────────────┐  │  │
-│  │ Realsense│    │ Dataset      │    │  │ Inference   │  │  │
-│  │ Gripper  │    │              │    │  │ Server      │  │  │
-│  └──────────┘    └──────────────┘    │  │ (GPU)    ┌─┘   │  │
-│                                      │  └───────────┘    │  │
-│                                      │     TCP/UDP │     │  │
-│                                      │  ┌──────────▼──┐  │  │
-│                                      │  │ Robot Client │  │  │
-│                                      │  │ (edge)       │  │  │
-│                                      │  └─────────────┘  │  │
-│                                      └───────────────────┘  │
+│  ┌──────────┐    ┌──────────────┐    ┌────────────────────┐  │
+│  │ Teleop   │───>│ Record Data  │───>│ Train & Deploy     │  │
+│  │ (Gamepad)│    │ (envlogger)  │    │ (Octo finetune)    │  │
+│  │          │    │              │    │                    │  │
+│  │ UR5/UR3  │    │ RLDS/TFDS    │    │ ┌──────────────┐   │  │
+│  │ Realsense│    │ Dataset      │    │ │ Inference    │   │  │
+│  │ Gripper  │    │              │    │ │ Server       │   │  │
+│  └──────────┘    └──────────────┘    │ │ (GPU)        │   │  │
+│                                      │ └──────────────┘   │  │
+│                                      │       TCP/UDP │    │  │
+│                                      │ ┌───────────┼──┐   │  │
+│                                      │ │ Robot Client │   │  │
+│                                      │ │ (edge)       │   │  │
+│                                      │ └──────────────┘   │  │
+│                                      └────────────────────┘  │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -308,7 +308,6 @@ This repository includes the full Octo model codebase from [rail-berkeley/octo](
 
 ## Contact
 
-- **GitHub**: [ArrebolBlack](https://github.com/ArrebolBlack)
 - **WeChat**: wxid_aotp6u5i4n522
 - **Email**: yjqhit@gmail.com
 
