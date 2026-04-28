@@ -180,11 +180,18 @@ def do_upload(datasets, data_root, repo_id):
         return
 
     # Upload dataset card
-    card = create_dataset_card(datasets, repo_id)
-    card_path = os.path.join(data_root, "README.md")
-    with open(card_path, "w", encoding="utf-8") as f:
-        f.write(card)
-    print(f"Dataset card written to: {card_path}")
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    card_path = os.path.join(script_dir, "hf_dataset_card.md")
+    if os.path.exists(card_path):
+        api.upload_file(
+            path_or_fileobj=card_path,
+            path_in_repo="README.md",
+            repo_id=repo_id,
+            repo_type="dataset",
+        )
+        print("Dataset card uploaded.")
+    else:
+        print("Warning: hf_dataset_card.md not found, skipping dataset card upload.")
 
     # Upload data directories
     for ds in datasets:
