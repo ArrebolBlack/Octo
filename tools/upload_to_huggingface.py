@@ -204,7 +204,7 @@ def do_upload(datasets, data_root, repo_id):
 def main():
     parser = argparse.ArgumentParser(description="Upload UR5/UR3 datasets to HuggingFace")
     parser.add_argument("--data_root", required=True, help="Root directory of downloaded datasets")
-    parser.add_argument("--repo_id", default="ArrebolBlack/octo_ur5_dataset", help="HuggingFace repo ID")
+    parser.add_argument("--repo_id", default="JiaqiYin/octo_ur5_dataset", help="HuggingFace repo ID")
     parser.add_argument("--push", action="store_true", help="Actually upload to HuggingFace Hub")
     parser.add_argument("--dry_run", action="store_true", help="Scan and show summary without uploading")
     args = parser.parse_args()

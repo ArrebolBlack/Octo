@@ -256,7 +256,7 @@ All real-world data collected via gamepad teleoperation.
 
 ### Access
 
-- **HuggingFace**: [Coming soon]
+- **HuggingFace**: [https://huggingface.co/datasets/JiaqiYin/octo_ur5_dataset](https://huggingface.co/datasets/JiaqiYin/octo_ur5_dataset)
 - **Baidu Netdisk**: See contact info below
 
 ---

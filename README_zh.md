@@ -202,7 +202,7 @@ python -m octo_ur5.inference.client_robot_tcp
 
 ### 获取方式
 
-- **HuggingFace**：即将发布
+- **HuggingFace**：[https://huggingface.co/datasets/JiaqiYin/octo_ur5_dataset](https://huggingface.co/datasets/JiaqiYin/octo_ur5_dataset)
 - **百度网盘**：详见联系方式
 
 ---
