@@ -106,7 +106,6 @@ docs/                          # Documentation and presentations
 ```bash
 git clone https://github.com/ArrebolBlack/Octo.git
 cd Octo
-git checkout refactor
 
 conda create -n octo python=3.10
 conda activate octo
