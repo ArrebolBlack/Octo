@@ -167,16 +167,40 @@ python -m octo_ur5.inference.server_tcp \
     --checkpoint_step=400000 --port=1242
 ```
 
+机器人端：
+```bash
+python -m octo_ur5.inference.client_robot_tcp
+# 配置: export OCTO_SERVER_IP=10.8.14.160  OCTO_SERVER_PORT=1242
+```
+
 ---
 
 ## 数据集
 
-| 数据集 | 机器人 | 任务 | Episode 数 |
-|--------|--------|------|-----------|
-| ur5_put_cube_on_plate_slow | UR5 | 抓取方块放到盘子上 | 10 |
-| ur3_pick_cup_single_slow | UR3 | 抓取杯子 | 20 |
-| ur3_pick_golden_cup_single_slow | UR3 | 抓取金杯子 | 10 |
-| ur3_pick_silver_cup_single_slow | UR3 | 抓取银杯子 | 10 |
+真机和仿真数据集，RLDS/TFDS 格式（兼容 Octo 数据加载管线）。所有真机数据通过手柄遥操作采集。
+
+### UR5 数据集
+
+| 数据集 | 类型 | 任务 | Episode 数 | 大小 |------|
+| ur5_put_cube_on_plate (1–25) | 真机 | 抓取方块放到盘子上 | 25 | 1.2G |
+| pick_cup_1.00 | 真机 | 抓取杯子 | 1 | 22M |
+| pick_cup_2.00 | 真机 | 抓取杯子 | 1 | 28M |
+| pick_reset_1.00 | 仿真 (PyBullet) | 抓取杯子和马克杯并放下 | 1 | 65M |
+
+### UR3 数据集
+
+| 数据集 | 任务 | Episode 数 | 大小 |
+|--------|------|-----------|------|
+| ur3_pick_cup_single (1–20) | 抓取杯子 | 20 | 447M |
+| ur3_pick_cup_single_slow (1–10) | 抓取杯子（慢速） | 10 | 450M |
+| ur3_pick_golden_cup_single (1–10) | 抓取金杯子 | 10 | 198M |
+| ur3_pick_golden_cup_single_slow (1–10) | 抓取金杯子（慢速） | 10 | 522M |
+| ur3_pick_silver_cup_single (1–10) | 抓取银杯子 | 10 | 195M |
+| ur3_pick_silver_cup_single_slow (1–10) | 抓取银杯子（慢速） | 10 | 107M |
+
+**总计：约 3.3GB，98 个 episode**
+
+### 获取方式
 
 - **HuggingFace**：即将发布
 - **百度网盘**：详见联系方式
@@ -186,8 +210,6 @@ python -m octo_ur5.inference.server_tcp \
 ## 外部依赖
 
 | 库 | 用途 |
-|----|------|
-| 库 | 用途 | 安装方式 |
 |----|------|---------|
 | pybullet_ur5_robotiq | PyBullet UR5 Robotiq 仿真环境 | 添加到 PYTHONPATH |
 | robopal | UR5e 仿真（实验性，可选） | `pip install robopal` |

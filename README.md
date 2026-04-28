@@ -69,7 +69,8 @@ octo_ur5/                      # ★ All original contributions
 ├── inference/                 # Distributed inference: GPU server ↔ robot client
 │   ├── server_tcp.py         # TCP inference server (runs on GPU machine)
 │   ├── server_udp.py         # UDP inference server (lower latency)
-│   └── client_env.py         # Socket-based Gym env (runs on robot machine)
+│   ├── client_env.py         # Socket-based Gym env (GPU side, used by eval scripts)
+│   └── client_robot_tcp.py   # Robot-side TCP client (runs on robot machine)
 ├── data_collection/           # Data collection pipeline
 │   ├── teleop_main.py        # Gamepad teleoperation main loop
 │   ├── dataset_recorder.py   # Record to RLDS/TFDS via envlogger
@@ -218,20 +219,42 @@ python -m octo_ur5.inference.server_tcp \
     --checkpoint_step=400000 --port=1242
 ```
 
-On robot machine, the client env (`octo_ur5.inference.client_env`) handles the robot side.
+On robot machine:
+```bash
+python -m octo_ur5.inference.client_robot_tcp
+# Configure: export OCTO_SERVER_IP=10.8.14.160  OCTO_SERVER_PORT=1242
+```
 
 ---
 
 ## Datasets
 
-Real-world UR5/UR3 pick-place datasets in RLDS format:
+Real-world and simulation datasets in RLDS/TFDS format (compatible with Octo's data pipeline).
+All real-world data collected via gamepad teleoperation.
 
-| Dataset | Robot | Task | Episodes |
-|---------|-------|------|----------|
-| ur5_put_cube_on_plate_slow | UR5 | Pick cube, place on plate | 10 |
-| ur3_pick_cup_single_slow | UR3 | Pick cup | 20 |
-| ur3_pick_golden_cup_single_slow | UR3 | Pick golden cup | 10 |
-| ur3_pick_silver_cup_single_slow | UR3 | Pick silver cup | 10 |
+### UR5 Datasets
+
+| Dataset | Type | Task | Episodes | Size |
+|---------|------|------|----------|------|
+| ur5_put_cube_on_plate (1–25) | Real | Pick cube, place on plate | 25 | 1.2G |
+| pick_cup_1.00 | Real | Pick up cup | 1 | 22M |
+| pick_cup_2.00 | Real | Pick up cup | 1 | 28M |
+| pick_reset_1.00 | Sim (PyBullet) | Pick up cup & mug, put down | 1 | 65M |
+
+### UR3 Datasets
+
+| Dataset | Task | Episodes | Size |
+|---------|------|----------|------|
+| ur3_pick_cup_single (1–20) | Pick up cup | 20 | 447M |
+| ur3_pick_cup_single_slow (1–10) | Pick up cup (slow) | 10 | 450M |
+| ur3_pick_golden_cup_single (1–10) | Pick up golden cup | 10 | 198M |
+| ur3_pick_golden_cup_single_slow (1–10) | Pick up golden cup (slow) | 10 | 522M |
+| ur3_pick_silver_cup_single (1–10) | Pick up silver cup | 10 | 195M |
+| ur3_pick_silver_cup_single_slow (1–10) | Pick up silver cup (slow) | 10 | 107M |
+
+**Total: ~3.3GB, 98 episodes**
+
+### Access
 
 - **HuggingFace**: [Coming soon]
 - **Baidu Netdisk**: See contact info below

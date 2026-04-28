@@ -20,30 +20,82 @@ import os
 def get_dataset_info():
     """Return dataset catalog with metadata."""
     datasets = {
-        "ur5_put_cube_on_plate_slow": {
+        "ur5_put_cube_on_plate": {
             "robot": "UR5e",
+            "type": "real",
             "task": "Pick up cube and place on plate",
-            "episodes": 10,
+            "episodes": 25,
             "observation_keys": ["image_primary", "proprio"],
             "action_dim": 7,
         },
-        "ur3_pick_cup_single_slow": {
+        "pick_cup_1.00": {
+            "robot": "UR5e",
+            "type": "real",
+            "task": "Pick up cup",
+            "episodes": 1,
+            "observation_keys": ["image_primary", "proprio"],
+            "action_dim": 7,
+        },
+        "pick_cup_2.00": {
+            "robot": "UR5e",
+            "type": "real",
+            "task": "Pick up cup",
+            "episodes": 1,
+            "observation_keys": ["image_primary", "proprio"],
+            "action_dim": 7,
+        },
+        "pick_reset_1.00": {
+            "robot": "UR5e",
+            "type": "simulation",
+            "task": "Pick up cup & mug and put down (PyBullet)",
+            "episodes": 1,
+            "observation_keys": ["image_primary", "proprio"],
+            "action_dim": 7,
+        },
+        "ur3_pick_cup_single": {
             "robot": "UR3e",
+            "type": "real",
             "task": "Pick up cup",
             "episodes": 20,
             "observation_keys": ["image_primary", "proprio"],
             "action_dim": 7,
         },
+        "ur3_pick_cup_single_slow": {
+            "robot": "UR3e",
+            "type": "real",
+            "task": "Pick up cup (slow)",
+            "episodes": 10,
+            "observation_keys": ["image_primary", "proprio"],
+            "action_dim": 7,
+        },
+        "ur3_pick_golden_cup_single": {
+            "robot": "UR3e",
+            "type": "real",
+            "task": "Pick up golden cup",
+            "episodes": 10,
+            "observation_keys": ["image_primary", "proprio"],
+            "action_dim": 7,
+        },
         "ur3_pick_golden_cup_single_slow": {
             "robot": "UR3e",
-            "task": "Pick up golden cup",
+            "type": "real",
+            "task": "Pick up golden cup (slow)",
+            "episodes": 10,
+            "observation_keys": ["image_primary", "proprio"],
+            "action_dim": 7,
+        },
+        "ur3_pick_silver_cup_single": {
+            "robot": "UR3e",
+            "type": "real",
+            "task": "Pick up silver cup",
             "episodes": 10,
             "observation_keys": ["image_primary", "proprio"],
             "action_dim": 7,
         },
         "ur3_pick_silver_cup_single_slow": {
             "robot": "UR3e",
-            "task": "Pick up silver cup",
+            "type": "real",
+            "task": "Pick up silver cup (slow)",
             "episodes": 10,
             "observation_keys": ["image_primary", "proprio"],
             "action_dim": 7,
@@ -66,7 +118,7 @@ tags:
   - imitation-learning
   - embodied-ai
 size_categories:
-  - n<1K
+  - 1K<n<10K
 ---
 
 # {repo_id}

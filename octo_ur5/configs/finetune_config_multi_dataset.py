@@ -35,20 +35,25 @@ def get_config(config_string="full,language_conditioned"):
             "standardize_fn": None,
         }
 
-    # UR5 datasets
-    ur5_task = "ur5_put_cube_on_plate_slow"
-    data_dirs = [os.path.join(data_root, "ur5_datasets", f"{ur5_task}/{ur5_task}_{i}") for i in range(1, 11)]
-    names = [f"{ur5_task}_{i}" for i in range(1, 11)]
+    data_dirs = []
+    names = []
 
-    # Uncomment to include UR3 datasets:
+    # UR5 datasets (25 episodes)
+    ur5_task = "ur5_put_cube_on_plate"
+    for i in range(1, 26):
+        data_dirs.append(os.path.join(data_root, "ur5_put_on", f"{ur5_task}/{ur5_task}_{i}"))
+        names.append(f"{ur5_task}_{i}")
+
+    # UR3 datasets (uncomment to include)
     # ur3_tasks = [
-    #     ("ur3_pick_cup_single_slow", 20),
+    #     ("ur3_pick_cup_single_slow", 10),
     #     ("ur3_pick_golden_cup_single_slow", 10),
     #     ("ur3_pick_silver_cup_single_slow", 10),
     # ]
     # for task_name, count in ur3_tasks:
-    #     data_dirs += [os.path.join(data_root, "ur3_datasets", f"{task_name}/{task_name}_{i}") for i in range(1, count + 1)]
-    #     names += [f"{task_name}_{i}" for i in range(1, count + 1)]
+    #     for i in range(1, count + 1):
+    #         data_dirs.append(os.path.join(data_root, task_name, f"{task_name}/{task_name}_{i}"))
+    #         names.append(f"{task_name}_{i}")
 
     FINETUNING_KWARGS = [
         create_finetuning_kwargs(names[i], data_dir)
