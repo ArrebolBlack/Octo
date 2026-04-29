@@ -46,7 +46,7 @@ A complete open-source pipeline for deploying the [Octo](https://octo-models.git
 │  └──────────┘    └──────────────┘    │ │ (GPU)        │   │  │
 │                                      │ └──────────────┘   │  │
 │                                      │       TCP/UDP │    │  │
-│                                      │ ┌───────────┼──┐   │  │
+│                                      │ ┌──────────────┐   │  │
 │                                      │ │ Robot Client │   │  │
 │                                      │ │ (edge)       │   │  │
 │                                      │ └──────────────┘   │  │
